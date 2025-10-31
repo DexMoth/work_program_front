@@ -12,7 +12,6 @@ const statuses = ref([])
 const departments = ref([])
 const curriculums = ref([])
 
-// Фильтры для зав. кафедры
 const selectedDepartment = ref('')
 const selectedCurriculum = ref('')
 
@@ -20,7 +19,7 @@ const loadPrograms = async () => {
     try {
         let url = API_URL + '/workProgram';
         
-        // Добавляем параметры фильтрации для зав. кафедры
+        // параметры фильтрации
         if (authStore.isDepartmentHead) {
             const params = new URLSearchParams();
             if (selectedDepartment.value) params.append('departmentId', selectedDepartment.value);
@@ -30,10 +29,9 @@ const loadPrograms = async () => {
                 url += '?' + params.toString();
             }
         } else {
-            // Для обычного преподавателя - только его программы
+            // для преподавателя - только его программы
             url += '/my';
         }
-        
         const resp = await fetch(url, { credentials: 'include' })
         programs.value = await resp.json();
     } catch (err) {
@@ -118,12 +116,12 @@ const canEditProgram = (program) => {
     return program.teacherId === authStore.currentUser?.id;
 }
 
-// Применить фильтры
+// фильтры
 const applyFilters = () => {
     loadPrograms();
 }
 
-// Сбросить фильтры
+// сбросить фильтры
 const resetFilters = () => {
     selectedDepartment.value = '';
     selectedCurriculum.value = '';
@@ -150,7 +148,7 @@ onMounted(() => {
     <div class="container mt-4">
         <h2>Список рабочих программ</h2>
         
-        <!-- Фильтры для зав. кафедры -->
+        <!-- фильтры для зав кафедры -->
         <div v-if="authStore.isDepartmentHead" class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Фильтры</h5>

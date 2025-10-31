@@ -193,9 +193,8 @@ const cancelEdit = () => {
   router.back();
 };
 
-// При изменении дисциплины обновляем список доступных учебных планов
+// обновляем список доступных учебных планов
 const onDisciplineChange = () => {
-  // Автоматически выбираем первый доступный учебный план для выбранной дисциплины
   const availablePlans = filteredCurriculumDisciplines.value;
   if (availablePlans.length > 0 && program.value) {
     program.value.curriculumDisciplineId = availablePlans[0].id;
@@ -280,15 +279,12 @@ onMounted(() => {
                   <select 
                     v-model="program.teacherId" 
                     class="form-select"
-                    :disabled="!canEditTeacher"
+                    disabled
                   >
                     <option v-for="teacher in allTeachers" :key="teacher.id" :value="teacher.id">
                       {{ teacher.fio }}
                     </option>
                   </select>
-                  <div v-if="!canEditTeacher" class="form-text text-muted">
-                    Только заведующий кафедрой может менять составителя
-                  </div>
                 </div>
 
                 <div class="mb-3">

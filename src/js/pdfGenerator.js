@@ -15,10 +15,15 @@ export class PDFGenerator {
       teacher,
       status,
       studyForms,
-      department, // Получаем объект кафедры
-      studyDirection, // Получаем объект направления
+      department,
+      studyDirection,
+      faculty,
+      competencies,
+      competenceIndicators,
       getStudyFormName,
-      formatDate
+      formatDate,
+      getCompetenceName,
+      getIndicatorsForCompetence
     } = programData;
 
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -160,6 +165,7 @@ export class PDFGenerator {
       yPosition += 50;
     }
 
+    pdf.setFontSize(12);
     // 2. Язык преподавания
     if (yPosition > 200) {
       pdf.addPage();
@@ -176,12 +182,7 @@ export class PDFGenerator {
     yPosition += 10;
     
     if (program?.goals) {
-      pdf.text(`Целью освоения дисциплины (модуля) «${data.dis?.name}» является ${program.goals}`, margin, yPosition, { maxWidth: 170 });
-      yPosition += 15;
-    }
-
-    if (program?.tasks) {
-      pdf.text(`Задачами являются: ${program.tasks}`, margin, yPosition, { maxWidth: 170 });
+      pdf.text(`Целью освоения дисциплины (модуля) является ${program.goals}`, margin, yPosition, { maxWidth: 170 });
       yPosition += 15;
     }
 
@@ -210,37 +211,50 @@ export class PDFGenerator {
 
     // Таблица компетенций (заглушка - нужно добавить данные компетенций)
     this.addCompetenciesTable(pdf, margin, yPosition);
+    yPosition += 30;
 
+    pdf.setFontSize(12);
     // 5
     pdf.text('5 МЕСТО ДИСЦИПЛИНЫ (МОДУЛЯ) В СТРУКТУРЕ ОБРАЗОВАТЕЛЬНОЙ ПРОГРАММЫ', margin, yPosition);
     yPosition += 5;
-    pdf.text('Дисциплина (модуль) относится к части, формируемой участниками образовательных отношений блока Б 1 образовательной программы.', margin, yPosition);
-    yPosition += 10;
+    pdf.text('Дисциплина (модуль) относится к части, формируемой участниками образовательных\nотношений блока Б 1 образовательной программы.', margin, yPosition);
+    yPosition += 15;
 
-    pdf.text('6 СОДЕРЖАНИЕ ДИСЦИПЛИНЫ (МОДУЛЯ), СТРУКТУРИРОВАННОЕ ПО ТЕМАМ (РАЗДЕЛАМ) С УКАЗАНИЕМ ОТВЕДЕННОГО НА НИХ КОЛИЧЕСТВА АКАДЕМИЧЕСКИХ ЧАСОВ И ВИДОВ УЧЕБНЫХ ЗАНЯТИЙ', margin, yPosition);
-    yPosition += 5;
-    pdf.text('6.1 Тематический план изучения дисциплины (модуля)');
+    pdf.text('6 СОДЕРЖАНИЕ ДИСЦИПЛИНЫ (МОДУЛЯ), СТРУКТУРИРОВАННОЕ ПО ТЕМАМ (РАЗДЕЛАМ)\n С УКАЗАНИЕМ ОТВЕДЕННОГО НА НИХ КОЛИЧЕСТВА АКАДЕМИЧЕСКИХ ЧАСОВ\n И ВИДОВ УЧЕБНЫХ ЗАНЯТИЙ', margin, yPosition);
+    yPosition += 15;
+    pdf.text('6.1 Тематический план изучения дисциплины (модуля)', margin, yPosition);
     yPosition += 10;
-    pdf.text('6.2. Теоритический курс');
+    pdf.text('6.2. Теоритический курс', margin, yPosition);
     yPosition += 5;
-    pdf.text('6.3. Практические (семинарские) занятия');
+    pdf.text('6.3. Практические (семинарские) занятия', margin, yPosition);
+    // yPosition += 5;
+    // pdf.text('6.4. Лабораторный практикум', margin, yPosition);
+    // yPosition += 5;
+
+    // pdf.text('6.5 Курсовой проект (работа), реферат, расчетно-графические работы', margin, yPosition);
+    // yPosition += 5;
+    // pdf.text('6.6 Самостоятельная работа обучающихся', margin, yPosition);
+    // yPosition += 5;
+    
+    pdf.text('7 ПЕРЕЧЕНЬ ОЦЕНОЧНЫХ СРЕДСТВ (ОЦЕНОЧНЫХ МАТЕРИАЛОВ) ДЛЯ ПРОВЕДЕНИЯ ТЕКУЩЕГО КОНТРОЛЯ И ПРОМЕЖУТОЧНОЙ АТТЕСТАЦИИ ОБУЧАЮЩИХСЯ ПО ДИСЦИПЛИНЕ (МОДУЛЮ)', margin, yPosition);
     yPosition += 5;
-    pdf.text('6.4. Лабораторный практикум');
+    pdf.text(program?.languages, margin, yPosition)
+    pdf.text('8 ПЕРЕЧЕНЬ УЧЕБНОЙ ЛИТЕРАТУРЫ, НЕОБХОДИМОЙ ДЛЯ ОСВОЕНИЯ ДИСЦИПЛИНЫ (МОДУЛЯ)', margin, yPosition);
     yPosition += 5;
-    pdf.text('6.5 Курсовой проект (работа), реферат, расчетно-графические работы');
-    yPosition += 5;
-    pdf.text('6.6 Самостоятельная работа обучающихся');
-    yPosition += 5;
-    pdf.text('7 ПЕРЕЧЕНЬ ОЦЕНОЧНЫХ СРЕДСТВ (ОЦЕНОЧНЫХ МАТЕРИАЛОВ) ДЛЯ ПРОВЕДЕНИЯ ТЕКУЩЕГО КОНТРОЛЯ И ПРОМЕЖУТОЧНОЙ АТТЕСТАЦИИ ОБУЧАЮЩИХСЯ ПО ДИСЦИПЛИНЕ (МОДУЛЮ)');
-    yPosition += 5;
-    pdf.text('8 ПЕРЕЧЕНЬ УЧЕБНОЙ ЛИТЕРАТУРЫ, НЕОБХОДИМОЙ ДЛЯ ОСВОЕНИЯ ДИСЦИПЛИНЫ (МОДУЛЯ)');
-    yPosition += 5;
-    pdf.text('9 ПЕРЕЧЕНЬ УЧЕБНО-МЕТОДИЧЕСКОГО ОБЕСПЕЧЕНИЯ ДЛЯ КОНТАКТНОЙ И САМОСТОЯТЕЛЬНОЙ РАБОТЫ ОБУЧАЮЩИХСЯ ПО ДИСЦИПЛИНЕ (МОДУЛЮ)');
-    yPosition += 5;
-    pdf.text('10. ПЕРЕЧЕНЬ ИНФОРМАЦИОННЫХ РЕСУРСОВ');
-    yPosition += 5;
-    pdf.text('11 ОПИСАНИЕ МАТЕРИАЛЬНО-ТЕХНИЧЕСКОЙ БАЗЫ И ПЕРЕЧЕНЬ ИНФОРМАЦИОННЫХ ТЕХНОЛОГИЙ, ИСПОЛЬЗУЕМЫХ ПРИ ОСУЩЕСТВЛЕНИИ ОБРАЗОВАТЕЛЬНОГО ПРОЦЕССА ПО ДИСЦИПЛИНЕ (МОДУЛЮ), ВКЛЮЧАЯ ПЕРЕЧЕНЬ ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ И ИНФОРМАЦИОННЫХ СПРАВОЧНЫХ СИСТЕМ ');
-    yPosition += 5;
+    // pdf.text(program?.grading_system, margin, yPosition)
+    // yPosition += 5;
+    // pdf.text('9 ПЕРЕЧЕНЬ УЧЕБНО-МЕТОДИЧЕСКОГО ОБЕСПЕЧЕНИЯ ДЛЯ КОНТАКТНОЙ И САМОСТОЯТЕЛЬНОЙ РАБОТЫ ОБУЧАЮЩИХСЯ ПО ДИСЦИПЛИНЕ (МОДУЛЮ)', margin, yPosition);
+    // yPosition += 5;
+    // pdf.text(program?.educational_technology, margin, yPosition)
+    // yPosition += 5;
+    // pdf.text('10. ПЕРЕЧЕНЬ ИНФОРМАЦИОННЫХ РЕСУРСОВ', margin, yPosition);
+    // yPosition += 5;
+    // pdf.text(program?.logistics, margin, yPosition)
+    // yPosition += 5;
+    // pdf.text('11 ОПИСАНИЕ МАТЕРИАЛЬНО-ТЕХНИЧЕСКОЙ БАЗЫ И ПЕРЕЧЕНЬ ИНФОРМАЦИОННЫХ ТЕХНОЛОГИЙ, ИСПОЛЬЗУЕМЫХ ПРИ ОСУЩЕСТВЛЕНИИ ОБРАЗОВАТЕЛЬНОГО ПРОЦЕССА ПО ДИСЦИПЛИНЕ (МОДУЛЮ), ВКЛЮЧАЯ ПЕРЕЧЕНЬ ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ И ИНФОРМАЦИОННЫХ СПРАВОЧНЫХ СИСТЕМ ', margin, yPosition);
+    // yPosition += 5;
+    // pdf.text(program?.references_t, margin, yPosition)
+    // yPosition += 5;
   }
 
   /**

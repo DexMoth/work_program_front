@@ -10,11 +10,6 @@ export const useAuthStore = defineStore('auth', () => {
     const verificationCode = ref(null)
     const codeExpiresAt = ref(null)
 
-    const userRole = computed(() => {
-        if (!currentUser.value) return null
-        return currentUser.value.roleId || 1
-    })
-
     const checkAuth = async () => {
         try {
             const response = await fetch(API_URL + '/teacher/me', {
@@ -23,7 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
             if (response.ok) {
                 currentUser.value = await response.json()
                 isAuthenticated.value = true
-                isVerified.value = response.data.verified || false
+                isVerified.value = currentUser.verified || false
                 return true
             } else {
                 currentUser.value = null
@@ -36,6 +31,18 @@ export const useAuthStore = defineStore('auth', () => {
             return false
         }
     }
+
+    const userRole = computed(() => {
+        if (!currentUser.value) {
+            return null
+        }
+        return currentUser.value.roleId || 1
+    })
+    
+    const isDepartmentHead = computed(() => {
+        const role = userRole.value
+        return role === 2
+    })
 
     const login = async (login, password) => {
         try {
@@ -144,6 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
         isAuthenticated,
         verificationMethod,
         codeExpiresAt,
+        isDepartmentHead,
         checkAuth,
         login,
         requestVerificationCode,

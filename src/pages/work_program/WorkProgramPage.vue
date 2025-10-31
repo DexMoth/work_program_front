@@ -15,6 +15,11 @@ const dis = ref(null);
 const teacher = ref(null);
 const studyForms = ref([]);
 const status = ref(null);
+const faculties = ref([]);
+const departments = ref([]);
+const studyDirections = ref([]);
+const competencies = ref([]);
+const competenceIndicators = ref([]);
 const loading = ref(true);
 const generatingPdf = ref(false);
 
@@ -37,8 +42,13 @@ const generatePDF = async () => {
       studyForms: studyForms.value,
       department: department.value,
       studyDirection: studyDirection.value,
+      faculty: getFacultyForDepartment(department.value?.id),
+      competencies: competencies.value,
+      competenceIndicators: competenceIndicators.value,
       getStudyFormName,
-      formatDate
+      formatDate,
+      getCompetenceName,
+      getIndicatorsForCompetence
     };
 
     await PDFGenerator.saveWorkProgramPDF(pdfData);
@@ -63,12 +73,23 @@ const loadWorkProgram = async () => {
       loadStudyForms(),
       loadStatus(),
       loadDepartments(),
-      loadStudyDirections()
+      loadStudyDirections(),
+      loadCompetencies(),
+      loadCompetenceIndicators()
     ]);
   } catch (err) {
     console.error('Ошибка загрузки рабочей программы', err);
   } finally {
     loading.value = false;
+  }
+};
+
+const loadFaculties = async () => {
+  try {
+    const resp = await fetch(`${API_URL}/faculty`);
+    faculties.value = await resp.json();
+  } catch (err) {
+    console.error('Ошибка загрузки факультетов', err);
   }
 };
 
@@ -98,10 +119,27 @@ const loadCurriculumDisciplines = async () => {
     dis.value = await resp2.json();
     const resp3 = await fetch(`${API_URL}/curriculum/${curriculumDisciplines.value.curriculumId}`);
     curriculum.value = await resp3.json();
+    await loadDepartmentAndStudyDirection();
   } catch (err) {
     console.error('Ошибка загрузки учебной дисциплины', err);
   }
 };
+
+const loadDepartmentAndStudyDirection = async () => {
+  try {
+    if (dis.value?.departmentId) {
+      const resp = await fetch(`${API_URL}/department/${dis.value.departmentId}`);
+      department.value = await resp.json();
+    }
+    if (curriculum.value?.studyDirectionId) {
+      const resp = await fetch(`${API_URL}/studyDirection/${curriculum.value.studyDirectionId}`);
+      studyDirection.value = await resp.json();
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки кафедры или направления', err);
+  }
+};
+
 
 const loadTeacher = async () => {
   try {
@@ -130,6 +168,33 @@ const loadStatus = async () => {
   }
 };
 
+const loadCompetencies = async () => {
+  try {
+    if (!dis.value?.id) return;
+    
+    const resp = await fetch(`${API_URL}/discipline/${dis.value.id}/competencies`);
+    competencies.value = await resp.json();
+  } catch (err) {
+    console.error('Ошибка загрузки компетенций', err);
+  }
+};
+
+const loadCompetenceIndicators = async () => {
+  try {
+    const resp = await fetch(`${API_URL}/competenceIndicators`);
+    competenceIndicators.value = await resp.json();
+  } catch (err) {
+    console.error('Ошибка загрузки индикаторов компетенций', err);
+  }
+};
+
+const getFacultyForDepartment = (departmentId) => {
+  if (!departmentId) return null;
+  const dept = departments.value.find(d => d.id === departmentId);
+  if (!dept) return null;
+  return faculties.value.find(f => f.id === dept.facultyId);
+};
+
 const getDepartmentName = (departmentId) => {
   const department = departments.value.find(d => d.id === departmentId);
   return department ? department.name : 'Неизвестно';
@@ -143,6 +208,15 @@ const getStudyDirectionName = (directionId) => {
 const getStudyFormName = (studyFormId) => {
   const form = studyForms.value.find(sf => sf.id === studyFormId);
   return form ? form.name : 'Неизвестно';
+};
+
+const getCompetenceName = (competenceId) => {
+  const competence = competencies.value.find(c => c.id === competenceId);
+  return competence ? `${competence.code} - ${competence.description}` : 'Неизвестно';
+};
+
+const getIndicatorsForCompetence = (competenceId) => {
+  return competenceIndicators.value.filter(ci => ci.competenceId === competenceId);
 };
 
 const formatDate = (dateString) => {
@@ -162,6 +236,19 @@ const changeStatus = async (newStatus) => {
     }
   } catch (err) {
     console.error('Ошибка изменения статуса', err);
+  }
+};
+
+const deleteProgram = async () => {
+  var choose = confirm("Удалить рабочую программу?")
+  if (choose == true) {
+    const resp = await fetch(`${API_URL}/workProgram/${route.params.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  alert("Рабочая программа удалена")
   }
 };
 
@@ -187,6 +274,9 @@ onMounted(() => {
         :disabled="generatingPdf || loading"
       >
         {{ generatingPdf ? 'Генерация PDF...' : 'Сохранить в PDF' }}
+      </button>
+      <button @click="deleteProgram" class="btn btn-outline-secondary mb-4 ms-4">
+          Удалить
       </button>
       <div v-if="loading" class="text-center">
         <div class="spinner-border" role="status">
