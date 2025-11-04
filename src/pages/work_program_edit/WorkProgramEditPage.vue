@@ -56,12 +56,14 @@ const loadWorkProgram = async () => {
 
 const loadCurriculumDisciplines = async () => {
   try {
-    const resp = await fetch(`${API_URL}/curriculumDiscipline/${program.value.curriculumDisciplineId}`);
-    curriculumDisciplines.value = await resp.json();
-    const resp2 = await fetch(`${API_URL}/discipline/${curriculumDisciplines.value.disciplineId}`);
-    dis.value = await resp2.json();
-    const resp3 = await fetch(`${API_URL}/curriculum/${curriculumDisciplines.value.curriculumId}`);
+    const resp3 = await fetch(`${API_URL}/curriculum/${program.value.curriculumId}`);
     curriculum.value = await resp3.json();
+
+    const resp = await fetch(`${API_URL}/curriculumDiscipline/byCurriculum/${program.value.curriculumId}`);
+    curriculumDisciplines.value = await resp.json();
+
+    const resp2 = await fetch(`${API_URL}/discipline/${curriculumDisciplines.value[0].disciplineId}`);
+    dis.value = await resp2.json();
   } catch (err) {
     console.error('Ошибка загрузки учебной дисциплины', err);
   }
@@ -238,56 +240,11 @@ onMounted(() => {
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label class="form-label"><strong>Дисциплина:</strong></label>
-                  <select 
-                    v-model="program.curriculumDisciplineId" 
-                    class="form-select"
-                    @change="onDisciplineChange"
-                  >
-                    <option 
-                      v-for="cd in allCurriculumDisciplines" 
-                      :key="cd.id" 
-                      :value="cd.id"
-                    >
-                      {{ cd.disciplineName }} ({{ cd.curriculumName }})
-                    </option>
-                  </select>
-                </div>
-
-                <!-- Учебный план (показывается только если есть выбор) -->
-                <div class="mb-3" v-if="filteredCurriculumDisciplines.length > 1">
-                  <label class="form-label"><strong>Учебный план:</strong></label>
-                  <select 
-                    v-model="program.curriculumDisciplineId" 
-                    class="form-select"
-                  >
-                    <option 
-                      v-for="cd in filteredCurriculumDisciplines" 
-                      :key="cd.id" 
-                      :value="cd.id"
-                    >
-                      {{ cd.curriculumName }} - Семестр {{ cd.semesterNumber }}
-                    </option>
-                  </select>
-                  <div class="form-text">
-                    Доступные учебные планы для выбранной дисциплины
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label"><strong>Составитель:</strong></label>
-                  <select 
-                    v-model="program.teacherId" 
-                    class="form-select"
-                    disabled
-                  >
-                    <option v-for="teacher in allTeachers" :key="teacher.id" :value="teacher.id">
-                      {{ teacher.fio }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
+                  <p><strong>Учебный план:</strong> {{ curriculum.name }}</p>
+                  <p><strong>Дисциплина:</strong> {{ dis?.name }}</p>
+                  <!-- {{ cd.disciplineName }} ({{ cd.curriculumName }}) -->
+                  <p><strong>Составитель:</strong> {{ teacher?.fio }}</p>
+                  <div class="mb-3">
                   <label class="form-label"><strong>Статус:</strong></label>
                   <select 
                     v-model="program.statusId" 
@@ -301,6 +258,7 @@ onMounted(() => {
                   <div v-if="!canEditStatus" class="form-text text-muted">
                     Только заведующий кафедрой может менять статус
                   </div>
+                </div>
                 </div>
               </div>
 
@@ -321,18 +279,6 @@ onMounted(() => {
                   >
                   <div class="form-text text-muted">
                     Дата создания не может быть изменена
-                  </div>
-                </div>
-
-                <!-- Информация о текущем учебном плане -->
-                <div class="mb-3" v-if="curriculumDisciplines">
-                  <label class="form-label"><strong>Текущий учебный план:</strong></label>
-                  <div class="form-control bg-light" readonly>
-                    <div v-if="curriculum">
-                      <strong>Направление:</strong> {{ curriculum.name }}<br>
-                      <strong>Семестр:</strong> {{ curriculumDisciplines.semesterNumber }}<br>
-                      <strong>Часы:</strong> {{ curriculumDisciplines.totalHours }} ч.
-                    </div>
                   </div>
                 </div>
               </div>
@@ -357,21 +303,28 @@ onMounted(() => {
                 <label class="form-label"><strong>Задачи дисциплины:</strong></label>
                 <textarea v-model="program.tasks" class="form-control" rows="4" placeholder="Введите задачи дисциплины"></textarea>
               </div>
-              <div class="col-12 mb-3">
+              <!-- <div class="col-12 mb-3">
                 <label class="form-label"><strong>Формируемые компетенции:</strong></label>
                 <textarea v-model="program.competencies" class="form-control" rows="3" placeholder="Введите формируемые компетенции"></textarea>
-              </div>
+              </div> -->
               <div class="col-12 mb-3">
                 <label class="form-label"><strong>Результаты обучения:</strong></label>
                 <textarea v-model="program.learningOutcomes" class="form-control" rows="3" placeholder="Введите результаты обучения"></textarea>
               </div>
               <div class="col-12 mb-3">
-                <label class="form-label"><strong>Требования:</strong></label>
-                <textarea v-model="program.requirements" class="form-control" rows="3" placeholder="Введите требования"></textarea>
-              </div>
-              <div class="col-12 mb-3">
-                <label class="form-label"><strong>Содержание по неделям:</strong></label>
-                <textarea v-model="program.contentByWeeks" class="form-control" rows="4" placeholder="Введите содержание по неделям"></textarea>
+                <label class="form-label"><strong>Содержание по неделям:</strong></label><br/>
+                <label class="form-label">Тематический план:</label>
+                <textarea v-model="program.thematicPlan" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Теоретический курс:</label>
+                <textarea v-model="program.theoreticalCourse" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Практические работы:</label>
+                <textarea v-model="program.practicalWork" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Лабораторные работы:</label>
+                <textarea v-model="program.laboratoryWorkshop" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Курсовой проект:</label>
+                <textarea v-model="program.courseProject" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Самостоятельная работа:</label>
+                <textarea v-model="program.independentWork" class="form-control" rows="4" placeholder=""></textarea>
               </div>
               <div class="col-12 mb-3">
                 <label class="form-label"><strong>Фонды оценочных средств:</strong></label>

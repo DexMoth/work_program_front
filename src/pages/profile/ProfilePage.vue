@@ -80,7 +80,8 @@ const cancelEditing = () => {
     editableFields.value = {
         fio: profile.value.fio || '',
         email: profile.value.email || '',
-        phone: profile.value.phone || ''
+        phone: profile.value.phone || '',
+        roleId: profile.value.roleId
     }
 }
 
@@ -93,7 +94,8 @@ const saveProfile = async () => {
             phone: editableFields.value.phone,
             isActive: profile.value.isActive,
             departmentId: profile.value.departmentId,
-            positionId: profile.value.positionId
+            positionId: profile.value.positionId,
+            roleId: profile.value.roleId
         }
 
         const resp = await fetch(API_URL + '/teacher/' + profile.value.id, {

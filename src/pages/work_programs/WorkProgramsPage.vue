@@ -10,10 +10,10 @@ const teachers = ref([])
 const disciplines = ref([])
 const statuses = ref([])
 const departments = ref([])
-const curriculums = ref([])
+const studyDirection = ref([])
 
 const selectedDepartment = ref('')
-const selectedCurriculum = ref('')
+const selectedStudyDirection = ref('')
 
 const loadPrograms = async () => {
     try {
@@ -23,7 +23,7 @@ const loadPrograms = async () => {
         if (authStore.isDepartmentHead) {
             const params = new URLSearchParams();
             if (selectedDepartment.value) params.append('departmentId', selectedDepartment.value);
-            if (selectedCurriculum.value) params.append('curriculumId', selectedCurriculum.value);
+            if (selectedStudyDirection.value) params.append('studyDirectionId', selectedStudyDirection.value);
             
             if (params.toString()) {
                 url += '?' + params.toString();
@@ -86,8 +86,8 @@ const loadDepartments = async () => {
 
 const loadCurriculums = async () => {
     try {
-        const resp = await fetch(API_URL + '/curriculum')
-        curriculums.value = await resp.json();
+        const resp = await fetch(API_URL + '/studyDirection')
+        studyDirection.value = await resp.json();
     } catch (err) {
         console.error('Ошибка загрузки направлений', err);
     }
@@ -124,7 +124,7 @@ const applyFilters = () => {
 // сбросить фильтры
 const resetFilters = () => {
     selectedDepartment.value = '';
-    selectedCurriculum.value = '';
+    selectedStudyDirection.value = '';
     loadPrograms();
 }
 
@@ -166,9 +166,9 @@ onMounted(() => {
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Направление</label>
-                        <select v-model="selectedCurriculum" class="form-select">
+                        <select v-model="selectedStudyDirection" class="form-select">
                             <option value="">Все направления</option>
-                            <option v-for="curr in curriculums" :key="curr.id" :value="curr.id">
+                            <option v-for="curr in studyDirection" :key="curr.id" :value="curr.id">
                                 {{ curr.name }}
                             </option>
                         </select>

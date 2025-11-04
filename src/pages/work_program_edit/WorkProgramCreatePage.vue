@@ -8,70 +8,50 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const program = ref({
-  curriculumDisciplineId: null,
+  curriculumId: null,
   teacherId: null,
-  statusId: 1, // По умолчанию "Черновик" или первый статус
-  languages: '',
-  goals: '',
-  tasks: '',
+  statusId: 1, // По умолчанию Черновик
+  languages: 'русский',
+  goals: 'Целью освоения дисциплины (модуля) является формирование у будущих выпускников компетенций в области ...',
+  tasks: 'Задачами освоения дисциплины (модуля) являются формирование у обучающихся:...',
   competencies: '',
-  learningOutcomes: '',
+  learningOutcomes: 'В результате изучения дисциплины (модуля) обучающиеся на основе приобретенных знаний, умений и навыков достигают освоения компетенций на определенном уровне.',
   requirements: '',
-  contentByWeeks: '',
-  assessmentTools: '',
-  gradingSystem: '',
-  educationalTechnology: '',
-  logistics: '',
-  references_t: ''
+  thematicPlan: 'Раздел 1. Раздел 1.	Особенности построения систем с использованием методов искусственного интеллекта.\nОбъем часов:\n Очная: лекции 10, практика 0, лабораторные работы 24, самостоятельная работа 31, всего 65',
+  assessmentTools: 'Компетенция: ПК-1. Код индикатора: ИД-1. Наименование оценочного средства: Лабораторные работы, собеседование, тест, зачет, экзамен',
+  gradingSystem: '1. Разработка веб-сервисов для анализа слабоструктурированных информационных ресурсов : учебное пособие / В. В. Воронина. – Ульяновск : УлГТУ, 2016. – 165 с. URL: http://lib.ulstu.ru/venec/disk/2017/44.pdf; 2. Кудрявцев, Н. Г. Практика применения компьютерного зрения и элементов машинного обучения в учебных проектах : учебное пособие / Н. Г. Кудрявцев, И. Н. Фролов. — Горно-Алтайск : ГАГУ, 2022. — 180 с. — Текст : электронный // Лань : электронно-библиотечная система. — URL:https://e.lanbook.com/book/271100',
+  educationalTechnology: '1.	Воронина, В. В. Теория и практика машинного обучения : учебное пособие / В. В. Воронина, А. В. Михеев, Н. Г. Ярушкина, К. В. Святов. – Ульяновск : УлГТУ, 2017. – 290 с. URL:  http://lib.ulstu.ru/venec/disk/2017/191.pdf',
+  logistics: 'Учебные аудитории для лекций оснащены учебной мебелью, магнитно-маркерными досками и техническими средствами обучения (проектор, экран, компьютер) с ПО: Microsoft Windows, Office, Adobe Reader, 7-Zip, Антивирус Касперского; для лабораторных и практических работ - компьютерные классы с ЛВС, Интернетом и ПО: PyCharm, Microsoft Office; для контроля знаний - компьютеризированные аудитории с ЛВС и ПО для аттестации; для самостоятельной работы - читальный зал с ПЭВМ, Wi-Fi и стандартным ПО.',
+  references_t: '1. Национальный Открытый Университет «ИНТУИТ» https://intuit.ru 2. Википедия – свободная энциклопедия https://ru.wikipedia.org',
+  theoreticalCourse: 'Основные вопросы, освещаемые на лекциях: Раздел 1.	Особенности построения систем с использованием методов искусственного интеллекта 1.	Введение. Возможности и ограничения применения искусственного интеллекта. 2.	Python – инструмента разработки систем искусственного интеллекта. Работа с DataFrame 3.	Разработка веб-сервисов. Визуализация данных. Типовые наборы данных. 4.	Модели представления, хранения и управления знаниями. Метрики качества моделей. Виды обучения. Понятие переобучения модели. Способы борьбы с переобучением',
+  practicalWork: ' Учебным планом не предусмотрены',
+  laboratoryWorkshop: 'Первый семестр: 1. Веб-сервис для загрузки и представления данных. 2. Веб-сервис для простейшего анализа данных',
+  courseProject: 'Учебным планом не предусмотрен',
+  independentWork: 'Виды самостоятельной работы распределяются в течение семестра. Подготовка к промежуточной аттестации ведется в установленные календарным учебным графиком сроки.'
 });
 
-const allCurriculumDisciplines = ref([]);
+const allCurriculums = ref([]);
 const allTeachers = ref([]);
 const allStatuses = ref([]);
-const allDisciplines = ref([]);
+const discipline = ref();
 const loading = ref(false);
 const saving = ref(false);
 
-// Вычисляемые свойства для прав доступа
+// для прав доступа
 const canEditTeacher = computed(() => {
-  return authStore.isDepartmentHead; // Только зав. кафедрой может менять составителя
+  return authStore.isDepartmentHead;
 });
 
 const canEditStatus = computed(() => {
-  return authStore.isDepartmentHead; // Только зав. кафедрой может менять статус
+  return authStore.isDepartmentHead;
 });
 
-// Фильтруем учебные планы по выбранной дисциплине
-const filteredCurriculumDisciplines = computed(() => {
-  if (!program.value.curriculumDisciplineId || !allCurriculumDisciplines.value.length) {
-    return allCurriculumDisciplines.value;
-  }
-  
-  // Находим текущую выбранную дисциплину
-  const currentCd = allCurriculumDisciplines.value.find(cd => cd.id === program.value.curriculumDisciplineId);
-  if (!currentCd) return allCurriculumDisciplines.value;
-  
-  // Фильтруем по disciplineId текущей выбранной дисциплины
-  return allCurriculumDisciplines.value.filter(cd => cd.disciplineId === currentCd.disciplineId);
-});
-
-const loadAllCurriculumDisciplines = async () => {
+const loadAllCurriculums = async () => {
   try {
-    const resp = await fetch(`${API_URL}/curriculumDiscipline`);
-    allCurriculumDisciplines.value = await resp.json();
-
-    // Для каждого curriculum discipline загружаем название дисциплины и учебного плана
-    for (let cd of allCurriculumDisciplines.value) {
-      const disciplineResp = await fetch(`${API_URL}/discipline/${cd.disciplineId}`);
-      const discipline = await disciplineResp.json();
-      cd.disciplineName = discipline.name;
-      
-      const curriculumResp = await fetch(`${API_URL}/curriculum/${cd.curriculumId}`);
-      const curriculum = await curriculumResp.json();
-      cd.curriculumName = curriculum.name;
-    }
+    const resp = await fetch(`${API_URL}/curriculum`);
+    allCurriculums.value = await resp.json();
   } catch (err) {
-    console.error('Ошибка загрузки учебных дисциплин', err);
+    console.error('Ошибка загрузки учебных планов', err);
   }
 };
 
@@ -102,28 +82,14 @@ const loadAllStatuses = async () => {
   }
 };
 
-const loadAllDisciplines = async () => {
-  try {
-    const resp = await fetch(`${API_URL}/discipline`);
-    allDisciplines.value = await resp.json();
-  } catch (err) {
-    console.error('Ошибка загрузки дисциплин', err);
-  }
-};
-
-// При изменении дисциплины обновляем список доступных учебных планов
-const onDisciplineChange = () => {
-  // Автоматически выбираем первый доступный учебный план для выбранной дисциплины
-  const availablePlans = filteredCurriculumDisciplines.value;
-  if (availablePlans.length > 0) {
-    program.value.curriculumDisciplineId = availablePlans[0].id;
-  } else {
-    program.value.curriculumDisciplineId = null;
-  }
-};
+const selectedCurriculum = computed(() => {
+  if (!program.value.curriculumId) return null;
+  return allCurriculums.value.find(c => c.id === program.value.curriculumId);
+});
 
 const createWorkProgram = async () => {
   saving.value = true;
+  console.log(program.value)
   try {
     const resp = await fetch(`${API_URL}/workProgram`, {
       method: 'POST',
@@ -147,6 +113,7 @@ const createWorkProgram = async () => {
   }
 };
 
+
 const cancelCreate = () => {
   router.back();
 };
@@ -155,10 +122,9 @@ onMounted(async () => {
   loading.value = true;
   try {
     await Promise.all([
-      loadAllCurriculumDisciplines(),
+      loadAllCurriculums(),
       loadAllTeachers(),
-      loadAllStatuses(),
-      loadAllDisciplines()
+      loadAllStatuses()
     ]);
   } catch (err) {
     console.error('Ошибка загрузки данных', err);
@@ -200,43 +166,23 @@ onMounted(async () => {
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label class="form-label"><strong>Дисциплина:</strong></label>
-                  <select 
-                    v-model="program.curriculumDisciplineId" 
-                    class="form-select"
-                    @change="onDisciplineChange"
-                    required
-                  >
-                    <option value="" disabled>Выберите дисциплину</option>
-                    <option 
-                      v-for="cd in allCurriculumDisciplines" 
-                      :key="cd.id" 
-                      :value="cd.id"
-                    >
-                      {{ cd.disciplineName }} ({{ cd.curriculumName }})
-                    </option>
-                  </select>
-                </div>
-
-                <!-- Учебный план (показывается только если есть выбор) -->
-                <div class="mb-3" v-if="filteredCurriculumDisciplines.length > 1">
                   <label class="form-label"><strong>Учебный план:</strong></label>
                   <select 
-                    v-model="program.curriculumDisciplineId" 
+                    v-model="program.curriculumId" 
                     class="form-select"
                     required
                   >
                     <option value="" disabled>Выберите учебный план</option>
                     <option 
-                      v-for="cd in filteredCurriculumDisciplines" 
-                      :key="cd.id" 
-                      :value="cd.id"
+                      v-for="curriculum in allCurriculums" 
+                      :key="curriculum.id" 
+                      :value="curriculum.id"
                     >
-                      {{ cd.curriculumName }} - Семестр {{ cd.semesterNumber }}
+                      {{ curriculum.name }}
                     </option>
                   </select>
                   <div class="form-text">
-                    Доступные учебные планы для выбранной дисциплины
+                    Выберите учебный план
                   </div>
                 </div>
 
@@ -288,33 +234,6 @@ onMounted(async () => {
                     required
                   >
                 </div>
-
-                <!-- Информация о текущем учебном плане -->
-                <div class="mb-3" v-if="program.curriculumDisciplineId">
-                  <label class="form-label"><strong>Информация о учебном плане:</strong></label>
-                  <div class="form-control bg-light" readonly>
-                    <div v-if="allCurriculumDisciplines.length > 0">
-                      <template v-for="cd in allCurriculumDisciplines" :key="cd.id">
-                        <div v-if="cd.id === program.curriculumDisciplineId">
-                          <strong>Дисциплина:</strong> {{ cd.disciplineName }}<br>
-                          <strong>Направление:</strong> {{ cd.curriculumName }}<br>
-                          <strong>Семестр:</strong> {{ cd.semesterNumber }}<br>
-                          <strong>Общее количество часов:</strong> {{ cd.totalHours }} ч.
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Подсказка если дисциплина не выбрана -->
-                <div class="mb-3" v-else>
-                  <div class="alert alert-info">
-                    <small>
-                      <i class="fas fa-info-circle me-1"></i>
-                      Выберите дисциплину чтобы увидеть информацию о учебном плане
-                    </small>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -337,7 +256,9 @@ onMounted(async () => {
                   rows="4" 
                   placeholder="Введите цели дисциплины"
                   required
-                ></textarea>
+                >
+                Целью основения дисциплины является ...
+              </textarea>
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label"><strong>Задачи дисциплины:</strong></label>
@@ -350,15 +271,6 @@ onMounted(async () => {
                 ></textarea>
               </div>
               <div class="col-12 mb-3">
-                <label class="form-label"><strong>Формируемые компетенции:</strong></label>
-                <textarea 
-                  v-model="program.competencies" 
-                  class="form-control" 
-                  rows="3" 
-                  placeholder="Введите формируемые компетенции"
-                ></textarea>
-              </div>
-              <div class="col-12 mb-3">
                 <label class="form-label"><strong>Результаты обучения:</strong></label>
                 <textarea 
                   v-model="program.learningOutcomes" 
@@ -368,22 +280,19 @@ onMounted(async () => {
                 ></textarea>
               </div>
               <div class="col-12 mb-3">
-                <label class="form-label"><strong>Требования:</strong></label>
-                <textarea 
-                  v-model="program.requirements" 
-                  class="form-control" 
-                  rows="3" 
-                  placeholder="Введите требования"
-                ></textarea>
-              </div>
-              <div class="col-12 mb-3">
                 <label class="form-label"><strong>Содержание по неделям:</strong></label>
-                <textarea 
-                  v-model="program.contentByWeeks" 
-                  class="form-control" 
-                  rows="4" 
-                  placeholder="Введите содержание по неделям"
-                ></textarea>
+                <label class="form-label">Тематический план:</label>
+                <textarea v-model="program.thematicPlan" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Теоретический курс:</label>
+                <textarea v-model="program.theoreticalCourse" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Практические работы:</label>
+                <textarea v-model="program.practicalWork" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Лабораторные работы:</label>
+                <textarea v-model="program.laboratoryWorkshop" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Курсовой проект:</label>
+                <textarea v-model="program.courseProject" class="form-control" rows="4" placeholder=""></textarea>
+                <label class="form-label">Самостоятельная работа:</label>
+                <textarea v-model="program.independentWork" class="form-control" rows="4" placeholder=""></textarea>
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label"><strong>Фонды оценочных средств:</strong></label>

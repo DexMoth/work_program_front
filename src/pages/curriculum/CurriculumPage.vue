@@ -24,11 +24,8 @@
           <div class="card-body">
             <div class="row">
               <div class="col-md-6">
+                <p><strong>Дисциплина:</strong> {{ getDisciplineName(curriculum.studyDirectionId) }}</p>
                 <p><strong>Название:</strong> {{ curriculum.name }}</p>
-                <p><strong>Направление:</strong> {{ studyDirectionName }}</p>
-              </div>
-              <div class="col-md-6">
-                <p><strong>Форма обучения:</strong> {{ studyFormName }}</p>
                 <p><strong>Учебный год:</strong> {{ curriculum.academicYear }}</p>
               </div>
             </div>
@@ -44,14 +41,13 @@
           </div>
           <div class="card-body">
             <div v-if="curriculumDisciplines.length === 0" class="text-center py-4">
-              <p class="text-muted">Дисциплины еще не добавлены</p>
+              <p class="text-muted">еще не добавлены</p>
             </div>
 
             <div v-else class="table-responsive">
               <table class="table table-bordered table-sm">
                 <thead class="table-light">
                   <tr>
-                    <th rowspan="2">Дисциплина</th>
                     <th rowspan="2">Форма обучения</th>
                     <th rowspan="2">Семестр</th>
                     <th colspan="4" class="text-center">Контактная работа</th>
@@ -79,8 +75,7 @@
                 </thead>
                 <tbody>
                   <tr v-for="cd in curriculumDisciplines" :key="cd.id">
-                    <td>{{ getDisciplineName(cd.disciplineId) }}</td>
-                    <td>{{ getStudyFormName(curriculum.studyFormId) }}</td>
+                    <td>{{ cd.studyForm }}</td>
                     <td>{{ cd.semesterNumber }}</td>
                     <td>{{ cd.totalContactHours || 0 }}</td>
                     <td>{{ cd.lectureHours || 0 }}</td>
@@ -120,7 +115,6 @@ const router = useRouter();
 const curriculum = ref(null);
 const curriculumDisciplines = ref([]);
 const studyDirections = ref([]);
-const studyForms = ref([]);
 const disciplines = ref([]);
 const departments = ref([]);
 const loading = ref(true);
@@ -136,11 +130,11 @@ const loadData = async () => {
     // Загружаем дисциплины учебного плана
     const disciplinesResp = await fetch(`${API_URL}/curriculumDiscipline/byCurriculum/${curriculumId}`);
     curriculumDisciplines.value = await disciplinesResp.json();
+    console.log(curriculumDisciplines.value)
     
     // Загружаем справочники
     await Promise.all([
       loadStudyDirections(),
-      loadStudyForms(),
       loadDisciplines(),
       loadDepartments()
     ]);
@@ -158,15 +152,6 @@ const loadStudyDirections = async () => {
     studyDirections.value = await resp.json();
   } catch (err) {
     console.error('Ошибка загрузки направлений', err);
-  }
-};
-
-const loadStudyForms = async () => {
-  try {
-    const resp = await fetch(`${API_URL}/study_form`);
-    studyForms.value = await resp.json();
-  } catch (err) {
-    console.error('Ошибка загрузки форм обучения', err);
   }
 };
 
@@ -193,17 +178,6 @@ const studyDirectionName = computed(() => {
   const direction = studyDirections.value.find(sd => sd.id === curriculum.value.studyDirectionId);
   return direction ? `${direction.code} - ${direction.name}` : 'Неизвестно';
 });
-
-const studyFormName = computed(() => {
-  if (!curriculum.value) return '';
-  const form = studyForms.value.find(sf => sf.id === curriculum.value.studyFormId);
-  return form ? form.name : 'Неизвестно';
-});
-
-const getStudyFormName = (studyFormId) => {
-  const form = studyForms.value.find(sf => sf.id === studyFormId);
-  return form ? form.name : 'Неизвестно';
-};
 
 const getDisciplineName = (disciplineId) => {
   const discipline = disciplines.value.find(d => d.id === disciplineId);

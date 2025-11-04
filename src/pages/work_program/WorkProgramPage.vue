@@ -5,10 +5,11 @@ import { useRoute } from 'vue-router';
 import { API_URL } from '@/js/api';
 import { PDFGenerator } from '@/js/pdfGenerator'
 
-const route = useRoute();
+const router = useRoute();
 const program = ref(null);
 const curriculumDisciplines = ref(null);
 const curriculum = ref(null);
+const depHead = ref();
 const department = ref(null);
 const studyDirection = ref(null);
 const dis = ref(null);
@@ -29,7 +30,7 @@ const generatePDF = async () => {
     alert('Данные еще не загружены');
     return;
   }
-
+  console.log(getFacultyForDepartment(department.value?.id))
   generatingPdf.value = true;
   try {
     const pdfData = {
@@ -38,6 +39,7 @@ const generatePDF = async () => {
       curriculum: curriculum.value,
       dis: dis.value,
       teacher: teacher.value,
+      depHead: depHead.value,
       status: status.value,
       studyForms: studyForms.value,
       department: department.value,
@@ -45,7 +47,6 @@ const generatePDF = async () => {
       faculty: getFacultyForDepartment(department.value?.id),
       competencies: competencies.value,
       competenceIndicators: competenceIndicators.value,
-      getStudyFormName,
       formatDate,
       getCompetenceName,
       getIndicatorsForCompetence
@@ -63,7 +64,7 @@ const generatePDF = async () => {
 
 const loadWorkProgram = async () => {
   try {
-    const resp = await fetch(`${API_URL}/workProgram/${route.params.id}`);
+    const resp = await fetch(`${API_URL}/workProgram/${router.params.id}`);
     program.value = await resp.json();
     
     // Загружаем связанные данные
@@ -72,10 +73,9 @@ const loadWorkProgram = async () => {
       loadTeacher(),
       loadStudyForms(),
       loadStatus(),
+      loadFaculties(),
       loadDepartments(),
-      loadStudyDirections(),
-      loadCompetencies(),
-      loadCompetenceIndicators()
+      loadStudyDirections()
     ]);
   } catch (err) {
     console.error('Ошибка загрузки рабочей программы', err);
@@ -97,6 +97,7 @@ const loadDepartments = async () => {
   try {
     const resp = await fetch(`${API_URL}/department`);
     departments.value = await resp.json();
+
   } catch (err) {
     console.error('Ошибка загрузки кафедр', err);
   }
@@ -113,13 +114,18 @@ const loadStudyDirections = async () => {
 
 const loadCurriculumDisciplines = async () => {
   try {
-    const resp = await fetch(`${API_URL}/curriculumDiscipline/${program.value.curriculumDisciplineId}`);
-    curriculumDisciplines.value = await resp.json();
-    const resp2 = await fetch(`${API_URL}/discipline/${curriculumDisciplines.value.disciplineId}`);
-    dis.value = await resp2.json();
-    const resp3 = await fetch(`${API_URL}/curriculum/${curriculumDisciplines.value.curriculumId}`);
+    const resp3 = await fetch(`${API_URL}/curriculum/${program.value.curriculumId}`);
     curriculum.value = await resp3.json();
+
+    const resp = await fetch(`${API_URL}/curriculumDiscipline/byCurriculum/${program.value.curriculumId}`);
+    curriculumDisciplines.value = await resp.json();
+
+    const resp2 = await fetch(`${API_URL}/discipline/${curriculumDisciplines.value[0].disciplineId}`);
+    dis.value = await resp2.json();
+    
     await loadDepartmentAndStudyDirection();
+    await loadCompetencies();
+    await loadCompetenceIndicators();
   } catch (err) {
     console.error('Ошибка загрузки учебной дисциплины', err);
   }
@@ -130,6 +136,12 @@ const loadDepartmentAndStudyDirection = async () => {
     if (dis.value?.departmentId) {
       const resp = await fetch(`${API_URL}/department/${dis.value.departmentId}`);
       department.value = await resp.json();
+
+      const resp2 = await fetch(`${API_URL}/teacher`);
+      const allTeachers = await resp2.json();
+      depHead.value = allTeachers.find(t => 
+        t.departmentId === department.value.id && t.roleId === 2
+    );
     }
     if (curriculum.value?.studyDirectionId) {
       const resp = await fetch(`${API_URL}/studyDirection/${curriculum.value.studyDirectionId}`);
@@ -170,10 +182,12 @@ const loadStatus = async () => {
 
 const loadCompetencies = async () => {
   try {
+    console.log('дисциплина:' + dis.value )
     if (!dis.value?.id) return;
     
     const resp = await fetch(`${API_URL}/discipline/${dis.value.id}/competencies`);
     competencies.value = await resp.json();
+    console.log('компетенции:' + competencies.value )
   } catch (err) {
     console.error('Ошибка загрузки компетенций', err);
   }
@@ -181,7 +195,7 @@ const loadCompetencies = async () => {
 
 const loadCompetenceIndicators = async () => {
   try {
-    const resp = await fetch(`${API_URL}/competenceIndicators`);
+    const resp = await fetch(`${API_URL}/competenceIndicator`);
     competenceIndicators.value = await resp.json();
   } catch (err) {
     console.error('Ошибка загрузки индикаторов компетенций', err);
@@ -203,11 +217,6 @@ const getDepartmentName = (departmentId) => {
 const getStudyDirectionName = (directionId) => {
   const direction = studyDirections.value.find(sd => sd.id === directionId);
   return direction ? `${direction.code} - ${direction.name}` : 'Неизвестно';
-};
-
-const getStudyFormName = (studyFormId) => {
-  const form = studyForms.value.find(sf => sf.id === studyFormId);
-  return form ? form.name : 'Неизвестно';
 };
 
 const getCompetenceName = (competenceId) => {
@@ -242,13 +251,14 @@ const changeStatus = async (newStatus) => {
 const deleteProgram = async () => {
   var choose = confirm("Удалить рабочую программу?")
   if (choose == true) {
-    const resp = await fetch(`${API_URL}/workProgram/${route.params.id}`, {
+    const resp = await fetch(`${API_URL}/workProgram/${router.params.id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       }
     });
-  alert("Рабочая программа удалена")
+  alert("Рабочая программа удалена");
+  router.push('/work_programs');
   }
 };
 
@@ -263,7 +273,7 @@ onMounted(() => {
           Назад
       </button>
       <router-link 
-          :to="`/work_programs/edit/${route.params.id}`"
+          :to="`/work_programs/edit/${router.params.id}`"
           class="btn btn-outline-secondary mb-4 ms-2"
       >
           Редактировать основную информацию
@@ -294,6 +304,7 @@ onMounted(() => {
             <div class="card-body">
               <div class="row">
                 <div class="col-md-6">
+                  <p><strong>Учебный план:</strong> {{ curriculum.name }}</p>
                   <p><strong>Дисциплина:</strong> {{ dis?.name }}</p>
                   <p><strong>Составитель:</strong> {{ teacher?.fio }}</p>
                   <p><strong>Статус:</strong> 
@@ -346,26 +357,26 @@ onMounted(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>{{ getStudyFormName(curriculum.studyFormId) }}</td>
-                      <td>{{ curriculumDisciplines.semesterNumber }}</td>
-                      <td>{{ curriculumDisciplines.totalContactHours }}</td>
-                      <td>{{ curriculumDisciplines.lectureHours }}</td>
-                      <td>{{ curriculumDisciplines.practiceHours }}</td>
-                      <td>{{ curriculumDisciplines.labHours }}</td>
-                      <td>{{ curriculumDisciplines.totalSelfStudyHours }}</td>
-                      <td>{{ curriculumDisciplines.consultationHours }}</td>
-                      <td>{{ curriculumDisciplines.theoryStudyHours }}</td>
-                      <td>{{ curriculumDisciplines.courseProjectHours }}</td>
-                      <td>{{ curriculumDisciplines.rgrHours }}</td>
-                      <td>{{ curriculumDisciplines.essayHours }}</td>
-                      <td>{{ curriculumDisciplines.practicePreparationHours }}</td>
-                      <td>{{ curriculumDisciplines.labPreparationHours }}</td>
-                      <td>{{ curriculumDisciplines.eLearningHours }}</td>
-                      <td>{{ curriculumDisciplines.intermediateAssessmentHours }}</td>
-                      <td>{{ curriculumDisciplines.totalHours }}</td>
-                      <td>{{ curriculumDisciplines.credits }}</td>
-                      <td>{{ curriculumDisciplines.assessmentForm }}</td>
+                    <tr v-for="cd in curriculumDisciplines" :key="cd.id">
+                      <td>{{ cd.studyForm }}</td>
+                      <td>{{ cd.semesterNumber }}</td>
+                      <td>{{ cd.totalContactHours }}</td>
+                      <td>{{ cd.lectureHours }}</td>
+                      <td>{{ cd.practiceHours }}</td>
+                      <td>{{ cd.labHours }}</td>
+                      <td>{{ cd.totalSelfStudyHours }}</td>
+                      <td>{{ cd.consultationHours }}</td>
+                      <td>{{ cd.theoryStudyHours }}</td>
+                      <td>{{ cd.courseProjectHours }}</td>
+                      <td>{{ cd.rgrHours }}</td>
+                      <td>{{ cd.essayHours }}</td>
+                      <td>{{ cd.practicePreparationHours }}</td>
+                      <td>{{ cd.labPreparationHours }}</td>
+                      <td>{{ cd.eLearningHours }}</td>
+                      <td>{{ cd.intermediateAssessmentHours }}</td>
+                      <td>{{ cd.totalHours }}</td>
+                      <td>{{ cd.credits }}</td>
+                      <td>{{ cd.assessmentForm }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -394,12 +405,12 @@ onMounted(() => {
                     {{ program.tasks || 'Не заполнено' }}
                   </div>
                 </div>
-                <div class="col-12 mb-3">
+                <!-- <div class="col-12 mb-3">
                   <h6>Формируемые компетенции</h6>
                   <div class="border p-3 bg-light rounded">
                     {{ program.competencies || 'Не заполнено' }}
                   </div>
-                </div>
+                </div> -->
                 <div class="col-12 mb-3">
                   <h6>Результаты обучения</h6>
                   <div class="border p-3 bg-light rounded">
@@ -414,8 +425,29 @@ onMounted(() => {
                 </div>
                 <div class="col-12 mb-3">
                   <h6>Содержание по неделям</h6>
+                  <label class="form-label">Тематический план:</label>
                   <div class="border p-3 bg-light rounded">
-                    {{ program.contentByWeeks || 'Не заполнено' }}
+                    {{ program.thematicPlan || 'Не заполнено' }}
+                  </div>
+                <label class="form-label">Теоретический курс:</label>
+                <div class="border p-3 bg-light rounded">
+                    {{ program.theoreticalCourse || 'Не заполнено' }}
+                  </div>
+                <label class="form-label">Практические работы:</label>
+                <div class="border p-3 bg-light rounded">
+                    {{ program.practicalWork || 'Не заполнено' }}
+                  </div>
+                <label class="form-label">Лабораторные работы:</label>
+                <div class="border p-3 bg-light rounded">
+                    {{ program.laboratoryWorkshop || 'Не заполнено' }}
+                  </div>
+                <label class="form-label">Курсовой проект:</label>
+                <div class="border p-3 bg-light rounded">
+                    {{ program.courseProject || 'Не заполнено' }}
+                  </div>
+                <label class="form-label">Самостоятельная работа:</label>
+                <div class="border p-3 bg-light rounded">
+                    {{ program.independentWork || 'Не заполнено' }}
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -456,7 +488,7 @@ onMounted(() => {
         <!-- Кнопки действий -->
         <div class="col-12">
           <div class="d-flex gap-2">
-            <router-link :to="`/work-programs/edit/${$route.params.id}`" 
+            <router-link :to="`/work-programs/edit/${$router.params.id}`" 
                         class="btn btn-primary"
                         v-if="program.status === 'draft'">
               Редактировать
