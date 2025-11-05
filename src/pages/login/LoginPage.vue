@@ -70,7 +70,6 @@ const handleLogin = async () => {
   const result = await authStore.login(login.value, password.value)
   
   if (result.success) {
-      // Переходим на страницу выбора метода верификации
       router.push('/verify-method')
   } else {
       error.value = result.error

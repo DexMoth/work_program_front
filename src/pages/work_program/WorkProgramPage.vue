@@ -258,7 +258,7 @@ const deleteProgram = async () => {
       }
     });
   alert("Рабочая программа удалена");
-  router.push('/work_programs');
+  router.push('/work_programs')
   }
 };
 

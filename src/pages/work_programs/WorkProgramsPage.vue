@@ -145,82 +145,78 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="container mt-4">
-        <h2>Список рабочих программ</h2>
-        
-        <!-- фильтры для зав кафедры -->
-        <div v-if="authStore.isDepartmentHead" class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Фильтры</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Кафедра</label>
-                        <select v-model="selectedDepartment" class="form-select">
-                            <option value="">Все кафедры</option>
-                            <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                                {{ dept.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Направление</label>
-                        <select v-model="selectedStudyDirection" class="form-select">
-                            <option value="">Все направления</option>
-                            <option v-for="curr in studyDirection" :key="curr.id" :value="curr.id">
-                                {{ curr.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button @click="applyFilters" class="btn btn-primary me-2">Применить</button>
-                        <button @click="resetFilters" class="btn btn-outline-secondary">Сбросить</button>
-                    </div>
+    <h2>Список рабочих программ</h2>
+    <div v-if="authStore.isDepartmentHead" class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Фильтры</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Кафедра</label>
+                    <select v-model="selectedDepartment" class="form-select">
+                        <option value="">Все кафедры</option>
+                        <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                            {{ dept.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Направление</label>
+                    <select v-model="selectedStudyDirection" class="form-select">
+                        <option value="">Все направления</option>
+                        <option v-for="curr in studyDirection" :key="curr.id" :value="curr.id">
+                            {{ curr.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button @click="applyFilters" class="btn btn-primary me-2">Применить</button>
+                    <button @click="resetFilters" class="btn btn-outline-secondary">Сбросить</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <router-link 
-            v-if="authStore.isAuthenticated"
-            to="/work_programs/create" 
-            class="btn btn-primary p-10 mb-4"
-        >
-            Создать рабочую программу
-        </router-link>
+    <router-link 
+        v-if="authStore.isAuthenticated"
+        to="/work_programs/create" 
+        class="btn btn-primary p-10 mb-4"
+    >
+        Создать рабочую программу
+    </router-link>
         
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th scope="col">Дисциплина</th>
-                        <th scope="col">Составитель</th>
-                        <th scope="col">Статус</th>
-                        <th scope="col">Дата создания</th>
-                        <th scope="col">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="program in programs" :key="program.id">
-                        <td>{{ getCurriculumDisciplineName(program.curriculumDisciplineId) }}</td>
-                        <td>{{ getTeacherName(program.teacherId) }}</td>
-                        <td>{{ getStatus(program.statusId) }}</td>
-                        <td>{{ new Date(program.createdAt).toLocaleDateString() }}</td>
-                        <td>
-                            <router-link 
-                                :to="`/work_programs/${program.id}`"
-                                class="btn btn-sm btn-outline-primary me-1"
-                            >
-                                Просмотр
-                            </router-link>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Дисциплина</th>
+                    <th scope="col">Составитель</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col">Дата создания</th>
+                    <th scope="col">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="program in programs" :key="program.id">
+                    <td>{{ getCurriculumDisciplineName(program.curriculumDisciplineId) }}</td>
+                    <td>{{ getTeacherName(program.teacherId) }}</td>
+                    <td>{{ getStatus(program.statusId) }}</td>
+                    <td>{{ new Date(program.createdAt).toLocaleDateString() }}</td>
+                    <td>
+                        <router-link 
+                            :to="`/work_programs/${program.id}`"
+                            class="btn btn-sm btn-outline-primary me-1"
+                        >
+                            Просмотр
+                        </router-link>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
         
-        <div v-if="programs.length === 0" class="text-center text-muted py-4">
-            <p>Рабочие программы не найдены</p>
-        </div>
+    <div v-if="programs.length === 0" class="text-center text-muted py-4">
+        <p>Рабочие программы не найдены</p>
     </div>
 </template>

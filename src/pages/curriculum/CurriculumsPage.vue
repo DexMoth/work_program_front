@@ -1,39 +1,33 @@
 <template>
-    <div class="container mt-4">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Учебные планы</h2>
-      </div>
-  
-      <div class="card">
-        <div class="card-body">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Название</th>
-                <th>Направление</th>
-                <th>Учебный год</th>
-                <th>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="curriculum in curriculums" :key="curriculum.id">
-                <td>{{ curriculum.name }}</td>
-                <td>{{ getStudyDirectionName(curriculum.studyDirectionId) }}</td>
-                <td>{{ curriculum.academicYear }}</td>
-                <td>
-                  <router-link 
-                    :to="`/curriculums/${curriculum.id}`" 
-                    class="btn btn-sm btn-outline-primary"
-                  >
-                    Просмотр
-                  </router-link>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Учебные планы</h2>
     </div>
+  
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Название</th>
+          <th>Направление</th>
+          <th>Учебный год</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="curriculum in curriculums" :key="curriculum.id">
+          <td>{{ curriculum.name }}</td>
+          <td>{{ getStudyDirectionName(curriculum.studyDirectionId) }}</td>
+          <td>{{ curriculum.academicYear }}</td>
+          <td>
+            <router-link 
+              :to="`/curriculums/${curriculum.id}`" 
+              class="btn btn-sm btn-outline-primary"
+            >
+              Просмотр
+            </router-link>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </template>
   
   <script setup>

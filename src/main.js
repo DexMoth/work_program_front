@@ -9,6 +9,16 @@ import { useAuthStore } from '@/js/auth'
 const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
-const authStore = useAuthStore()
-authStore.checkAuth()
-app.use(router).mount('#app')
+
+// загружаем веб только после аутентификации
+const initApp = async () => {
+    const authStore = useAuthStore()
+    try {
+        await authStore.checkAuth()
+    } catch (error) {
+        console.log('Ошибка проверки аутентификации')
+    }
+    app.use(router).mount('#app')
+}
+
+initApp()

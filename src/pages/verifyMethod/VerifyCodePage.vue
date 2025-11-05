@@ -12,10 +12,8 @@
                         </p>
                         
                         <p class="text-muted small mb-3">
-                            Код действителен: 
-                            <span :class="{ 'text-danger': remainingTime < 30 }">
-                                {{ formatTime(remainingTime) }}
-                            </span>
+                            <p>Код действителен в течении:</p>
+                            {{ formatTime(remainingTime) }}
                         </p>
 
                         <form @submit.prevent="verifyCode">
@@ -81,6 +79,7 @@ const loading = ref(false)
 const error = ref('')
 const timer = ref(null)
 
+
 const verificationTarget = computed(() => {
     const method = authStore.verificationMethod
     const user = authStore.currentUser
@@ -89,12 +88,12 @@ const verificationTarget = computed(() => {
     return 'выбранный способ'
 })
 
-const remainingTime = computed(() => authStore.getRemainingTime())
+const remainingTime = ref(300)
 
 const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
+    return `${mins} минут ${secs.toString().padStart(2, '0')} секунд`
 }
 
 const verifyCode = async () => {
@@ -104,7 +103,7 @@ const verifyCode = async () => {
     const result = await authStore.verifyCode(code.value)
     
     if (result.success) {
-        router.push('/profile') //
+        router.push('/profile')
     } else {
         error.value = result.error
     }
@@ -120,6 +119,8 @@ const resendCode = async () => {
     
     if (!result.success) {
         error.value = result.error
+    } else {
+        remainingTime.value = 300
     }
     
     loading.value = false
@@ -129,10 +130,13 @@ const goBack = () => {
     router.push('/verify-method')
 }
 
-// Таймер для обновления оставшегося времени
 onMounted(() => {
     timer.value = setInterval(() => {
-        // Таймер обновляется автоматически через computed свойство
+        if (remainingTime.value > 0) {
+            remainingTime.value--
+        } else {
+            clearInterval(timer.value)
+        }
     }, 1000)
 })
 
